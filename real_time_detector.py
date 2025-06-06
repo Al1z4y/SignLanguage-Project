@@ -81,19 +81,21 @@ class RealTimeHandGestureDetector:
         
         if results.multi_hand_landmarks:
             for hand_landmarks in results.multi_hand_landmarks:
-                # Extract 21 landmarks
+                # Extract 21 landmarks - use normalized coordinates (0-1) directly from MediaPipe
+                # This matches the training data format after coordinate normalization
                 hand_keypoints = []
                 for landmark in hand_landmarks.landmark:
+                    # MediaPipe returns normalized coordinates (0-1), keep them as-is
                     hand_keypoints.extend([landmark.x, landmark.y])
                 
-                # Check if we need confidence values
+                # Check if we need confidence values (for older models)
                 if any('confidence' in name for name in self.feature_names):
                     # Add confidence values (set to 1.0 for live detection)
                     hand_keypoints_with_conf = []
                     for i in range(0, len(hand_keypoints), 2):
                         hand_keypoints_with_conf.extend([
-                            hand_keypoints[i],     # x
-                            hand_keypoints[i+1],   # y
+                            hand_keypoints[i],     # x (normalized)
+                            hand_keypoints[i+1],   # y (normalized)
                             1.0                    # confidence
                         ])
                     hand_keypoints = hand_keypoints_with_conf
@@ -206,8 +208,8 @@ class RealTimeHandGestureDetector:
         frame = cv2.addWeighted(frame, 0.8, overlay, 0.2, 0)
         
         # Title
-        cv2.putText(frame, "Hand Gesture Detection", (20, 40),
-                   cv2.FONT_HERSHEY_SIMPLEX, 0.8, (255, 255, 255), 2)
+        cv2.putText(frame, "Hand Gesture Detection (Normalized)", (20, 40),
+                   cv2.FONT_HERSHEY_SIMPLEX, 0.7, (255, 255, 255), 2)
         
         # Current prediction
         if prediction and prediction['confidence'] > self.confidence_threshold:

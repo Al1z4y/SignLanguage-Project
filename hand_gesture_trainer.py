@@ -54,8 +54,8 @@ class HandGestureTrainer:
         columns_to_remove = ['sample_file']  # Remove filename column
         
         # Optional: Remove confidence columns (keep only x, y coordinates)
-        remove_confidence = input("Remove confidence values? (y/n, default=n): ").lower().strip()
-        if remove_confidence == 'y':
+        remove_confidence = input("Remove confidence values? (y/n, default=y): ").lower().strip()
+        if remove_confidence != 'n':
             confidence_cols = [col for col in self.df.columns if col.endswith('_confidence')]
             columns_to_remove.extend(confidence_cols)
             print(f"Removing {len(confidence_cols)} confidence columns")
@@ -67,6 +67,45 @@ class HandGestureTrainer:
             print(f"Removed columns: {existing_cols_to_remove}")
         
         print(f"Dataset shape after removal: {self.df.shape}")
+        
+        # Normalize pixel coordinates to 0-1 range (like MediaPipe)
+        print("\nNormalizing pixel coordinates to 0-1 range...")
+        
+        # Separate coordinate columns
+        x_columns = [col for col in self.df.columns if col.endswith('_x') and col != 'alphabet']
+        y_columns = [col for col in self.df.columns if col.endswith('_y') and col != 'alphabet']
+        
+        print(f"Found {len(x_columns)} X coordinate columns")
+        print(f"Found {len(y_columns)} Y coordinate columns")
+        
+        if len(x_columns) > 0 and len(y_columns) > 0:
+            # Get original ranges for display
+            x_min, x_max = self.df[x_columns].min().min(), self.df[x_columns].max().max()
+            y_min, y_max = self.df[y_columns].min().min(), self.df[y_columns].max().max()
+            print(f"Original coordinate ranges:")
+            print(f"  X: {x_min:.1f} to {x_max:.1f}")
+            print(f"  Y: {y_min:.1f} to {y_max:.1f}")
+            
+            # Normalize X coordinates (assuming typical video width range)
+            # Find the actual range and normalize to 0-1
+            for col in x_columns:
+                col_min, col_max = self.df[col].min(), self.df[col].max()
+                if col_max > col_min:  # Avoid division by zero
+                    self.df[col] = (self.df[col] - col_min) / (col_max - col_min)
+            
+            # Normalize Y coordinates (assuming typical video height range)
+            for col in y_columns:
+                col_min, col_max = self.df[col].min(), self.df[col].max()
+                if col_max > col_min:  # Avoid division by zero
+                    self.df[col] = (self.df[col] - col_min) / (col_max - col_min)
+            
+            # Check normalized ranges
+            x_min_norm, x_max_norm = self.df[x_columns].min().min(), self.df[x_columns].max().max()
+            y_min_norm, y_max_norm = self.df[y_columns].min().min(), self.df[y_columns].max().max()
+            print(f"Normalized coordinate ranges:")
+            print(f"  X: {x_min_norm:.3f} to {x_max_norm:.3f}")
+            print(f"  Y: {y_min_norm:.3f} to {y_max_norm:.3f}")
+            print("✅ Coordinates normalized to match MediaPipe format (0-1 range)")
         
         # Check for missing values
         missing_values = self.df.isnull().sum().sum()
@@ -82,6 +121,7 @@ class HandGestureTrainer:
         
         print(f"Features shape: {self.X.shape}")
         print(f"Labels shape: {self.y.shape}")
+        print("📊 Data now uses normalized coordinates (0-1) compatible with MediaPipe")
         
         return True
     
