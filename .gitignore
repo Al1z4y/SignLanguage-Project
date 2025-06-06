@@ -1,0 +1,9 @@
+/tools/
+/.venv/
+best_hand_gesture_model.h5
+feature_names.pkl
+feature_scaler.pkl
+hand_gesture_model.h5
+label_encoder.pkl
+confusion_matrix.png
+training_results.png

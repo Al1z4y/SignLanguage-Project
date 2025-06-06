@@ -1,4 +1,11 @@
 numpy
+pandas
 opencv-python
 tensorflow
 mediapipe
+scikit-learn
+matplotlib
+seaborn
+tqdm
+scipy
+pickle5
